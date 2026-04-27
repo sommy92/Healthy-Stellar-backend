@@ -17,6 +17,7 @@ export enum UserRole {
   PATIENT = 'patient',
   BILLING_STAFF = 'billing_staff',
   MEDICAL_RECORDS = 'medical_records',
+  SUPER_ADMIN = 'super_admin',
 }
 
 @Entity('users')
@@ -44,6 +45,15 @@ export class User {
 
   @Column({ default: false })
   isActive: boolean;
+
+  @Column({ default: false })
+  isLicenseVerified: boolean;
+
+  @Column({ nullable: true, length: 100 })
+  country: string;
+
+  @Column({ default: true })
+  isAcceptingPatients: boolean;
 
   @Column({ default: false })
   mfaEnabled: boolean;
