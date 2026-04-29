@@ -70,6 +70,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
 import { IdempotencyModule } from './idempotency/idempotency.module';
 import { IdempotencyInterceptor } from './idempotency/idempotency.interceptor';
 import { DlqModule } from './dlq/dlq.module';
+import { OperatorRunbookModule } from './operator-runbook/operator-runbook.module';
 
 @Module({
   imports: [
@@ -147,6 +148,7 @@ import { DlqModule } from './dlq/dlq.module';
     WebhooksModule,
     IdempotencyModule,
     DlqModule,
+    OperatorRunbookModule,
     EventEmitterModule.forRoot(),
  main
   ],
