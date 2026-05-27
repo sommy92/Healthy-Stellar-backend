@@ -2,9 +2,12 @@ import { Module, NestModule, MiddlewareConsumer, RequestMethod } from '@nestjs/c
 import { WebhooksController } from './webhooks.controller';
 import { WebhookSignatureMiddleware } from '../common/middleware/webhook-signature.middleware';
 import { RawBodyMiddleware } from '../common/middleware/raw-body.middleware';
+import { IpfsService } from '../stellar/services/ipfs.service';
+import { QueueService } from '../queues/queue.service';
 
 @Module({
   controllers: [WebhooksController],
+  providers: [IpfsService, QueueService],
 })
 export class WebhooksModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
