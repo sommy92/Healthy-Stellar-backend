@@ -32,6 +32,12 @@ import { HttpMetricsInterceptor } from './interceptors/http-metrics.interceptor'
 import { DbMetricsSubscriber } from './subscribers/db-metrics.subscriber';
 import { QueueMetricsCollector } from './collectors/queue-metrics.collector';
 import { PatientProviderMetricsCollector } from './collectors/patient-provider-metrics.collector';
+import {
+  DbPoolMetricsCollector,
+  DbPoolSizeGauge,
+  DbPoolCheckedOutGauge,
+  DbPoolIdleGauge,
+} from './collectors/db-pool-metrics.collector';
 import { SloService } from './slo.service';
 import { Patient } from '../patients/entities/patient.entity';
 import { QUEUE_NAMES } from '../queues/queue.constants';
@@ -88,6 +94,10 @@ import { QUEUE_NAMES } from '../queues/queue.constants';
     DbMetricsSubscriber,
     QueueMetricsCollector,
     PatientProviderMetricsCollector,
+    DbPoolMetricsCollector,
+    DbPoolSizeGauge,
+    DbPoolCheckedOutGauge,
+    DbPoolIdleGauge,
     SloService,
   ],
   exports: [CustomMetricsService, HttpMetricsInterceptor, SloService],
