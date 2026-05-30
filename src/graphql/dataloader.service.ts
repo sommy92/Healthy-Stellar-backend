@@ -1,9 +1,9 @@
 import { Injectable, Scope } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
-import * as DataLoader from 'dataloader';
+import DataLoader from 'dataloader';
 import { Patient as PatientEntity } from '../patients/entities/patient.entity';
-import { User } from '../users/entities/user.entity';
+import { User, UserRole } from '../auth/entities/user.entity';
 import { Patient } from './types/patient.type';
 import { Provider } from './types/provider.type';
 
@@ -11,56 +11,59 @@ import { Provider } from './types/provider.type';
 export class DataloaderService {
   constructor(
     @InjectRepository(PatientEntity)
-    private readonly patientRepo: Repository<PatientEntity>,
+    private readonly patientRepository: Repository<PatientEntity>,
     @InjectRepository(User)
-    private readonly userRepo: Repository<User>,
+    private readonly userRepository: Repository<User>,
   ) {}
 
-  createPatientLoader(): DataLoader<string, Patient | null> {
-    return new DataLoader<string, Patient | null>(
-      async (ids: readonly string[]) => {
-        const rows = await this.patientRepo.find({
-          where: { id: In([...ids]) },
-        });
-        const map = new Map<string, PatientEntity>(rows.map((p) => [p.id, p]));
-        return ids.map((id) => {
-          const p = map.get(id);
-          if (!p) return null;
-          return {
+  createPatientLoader(): DataLoader<string, Patient> {
+    return new DataLoader<string, Patient>(async (ids: readonly string[]) => {
+      const patients = await this.patientRepository.find({
+        where: { id: In([...ids]) },
+      });
+
+      const map = new Map(
+        patients.map((p) => [
+          p.id,
+          {
             id: p.id,
             address: p.address ?? '',
-            name: `${p.firstName} ${p.lastName}`.trim(),
+            name: `${p.firstName || ''} ${p.lastName || ''}`.trim(),
             email: p.email,
             createdAt: p.createdAt,
             updatedAt: p.updatedAt,
-          } as Patient;
-        });
-      },
-      { cache: true },
-    );
+          } as Patient,
+        ]),
+      );
+
+      return ids.map((id) => map.get(id as string) ?? new Error(`Patient ${id} not found`));
+    });
   }
 
-  createProviderLoader(): DataLoader<string, Provider | null> {
-    return new DataLoader<string, Provider | null>(
-      async (ids: readonly string[]) => {
-        const rows = await this.userRepo.find({
-          where: { id: In([...ids]) },
-        });
-        const map = new Map<string, User>(rows.map((u) => [u.id, u]));
-        return ids.map((id) => {
-          const u = map.get(id);
-          if (!u) return null;
-          return {
-            id: u.id,
-            address: u.email,
-            name: `${u.firstName} ${u.lastName}`.trim(),
-            specialty: undefined,
-            createdAt: u.createdAt,
-            updatedAt: u.updatedAt,
-          } as Provider;
-        });
-      },
-      { cache: true },
-    );
+  createProviderLoader(): DataLoader<string, Provider> {
+    return new DataLoader<string, Provider>(async (ids: readonly string[]) => {
+      const providers = await this.userRepository.find({
+        where: {
+          id: In([...ids]),
+          role: In([UserRole.PHYSICIAN, UserRole.MEDICAL_RECORDS]),
+        },
+      });
+
+      const map = new Map(
+        providers.map((p) => [
+          p.id,
+          {
+            id: p.id,
+            address: p.institution ?? '',
+            name: `${p.firstName || ''} ${p.lastName || ''}`.trim(),
+            specialty: p.specialization || p.specialty,
+            createdAt: p.createdAt,
+            updatedAt: p.updatedAt,
+          } as Provider,
+        ]),
+      );
+
+      return ids.map((id) => map.get(id as string) ?? new Error(`Provider ${id} not found`));
+    });
   }
 }

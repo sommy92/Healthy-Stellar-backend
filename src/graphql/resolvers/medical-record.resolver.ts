@@ -8,38 +8,27 @@ import {
   ResolveField,
   Parent,
 } from '@nestjs/graphql';
-import { UseGuards } from '@nestjs/common';
-import { InputType, Field } from '@nestjs/graphql';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { UseGuards, ForbiddenException } from '@nestjs/common';
 import { MedicalRecord } from '../types/medical-record.type';
 import { Patient } from '../types/patient.type';
 import { GqlAuthGuard } from '../guards/gql-auth.guard';
 import { DataloaderService } from '../dataloader.service';
-import { RecordsService } from '../../records/services/records.service';
-import { Record as RecordEntity } from '../../records/entities/record.entity';
+import { MedicalRecordsService } from '../../medical-records/services/medical-records.service';
+import { AddRecordInput } from '../types/inputs';
+import { TenantContext } from '../../tenant/context/tenant.context';
 import DataLoader from 'dataloader';
 
-@InputType()
-export class AddRecordInput {
-  @Field()
-  patientId: string;
-
-  @Field()
-  cid: string;
-
-  @Field()
-  recordType: string;
-
-  @Field({ nullable: true })
-  stellarTxHash?: string;
+interface RecordService {
+  findOne(id: string, requesterId: string): Promise<MedicalRecord | null>;
+  findByPatient(patientId: string, requesterId: string): Promise<MedicalRecord[]>;
+  add(input: AddRecordInput, requesterId: string): Promise<MedicalRecord>;
 }
 
 @Resolver(() => MedicalRecord)
 @UseGuards(GqlAuthGuard)
 export class MedicalRecordResolver {
   constructor(
-    private readonly recordsService: RecordsService,
+    private readonly medicalRecordsService: MedicalRecordsService,
     private readonly dataloaderService: DataloaderService,
     @InjectRepository(RecordEntity)
     private readonly recordRepo: Repository<RecordEntity>,
@@ -50,9 +39,14 @@ export class MedicalRecordResolver {
     @Args('id', { type: () => ID }) id: string,
     @Context() ctx: { req: { user: { sub: string } } },
   ): Promise<MedicalRecord | null> {
+    const organizationId = TenantContext.getTenantId();
+    if (!organizationId) {
+      throw new ForbiddenException('Tenant context not found');
+    }
+
     try {
-      const r = await this.recordsService.findOne(id, ctx.req.user.sub);
-      return this.toGqlType(r, ctx.req.user.sub);
+      const record = await this.medicalRecordsService.findOne(id, undefined, organizationId);
+      return this.mapToGraphQL(record);
     } catch {
       return null;
     }
@@ -63,8 +57,16 @@ export class MedicalRecordResolver {
     @Args('patientId', { type: () => ID }) patientId: string,
     @Context() ctx: { req: { user: { sub: string } } },
   ): Promise<MedicalRecord[]> {
-    const result = await this.recordsService.findAll({ patientId } as any);
-    return result.data.map((r) => this.toGqlType(r, ctx.req.user.sub));
+    const organizationId = TenantContext.getTenantId();
+    if (!organizationId) {
+      throw new ForbiddenException('Tenant context not found');
+    }
+
+    const result = await this.medicalRecordsService.search(
+      { patientId, limit: 100, page: 1 },
+      organizationId,
+    );
+    return result.data.map((r) => this.mapToGraphQL(r));
   }
 
   @Mutation(() => MedicalRecord)
@@ -72,16 +74,37 @@ export class MedicalRecordResolver {
     @Args('input') input: AddRecordInput,
     @Context() ctx: { req: { user: { sub: string } } },
   ): Promise<MedicalRecord> {
-    const saved = await this.recordRepo.save(
-      this.recordRepo.create({
+    const organizationId = TenantContext.getTenantId();
+    if (!organizationId) {
+      throw new ForbiddenException('Tenant context not found');
+    }
+
+    const record = await this.medicalRecordsService.create(
+      {
         patientId: input.patientId,
-        cid: input.cid,
-        recordType: input.recordType as any,
-        stellarTxHash: input.stellarTxHash,
-        providerId: ctx.req.user.sub,
-      }),
+        recordType: input.recordType,
+        description: input.description,
+      } as any,
+      ctx.req.user.sub,
+      ctx.req.user.sub,
+      organizationId,
     );
-    return this.toGqlType(saved, ctx.req.user.sub);
+    return this.mapToGraphQL(record);
+  }
+
+  private mapToGraphQL(record: any): MedicalRecord {
+    return {
+      id: record.id,
+      patientId: record.patientId,
+      recordType: record.recordType,
+      status: record.status,
+      title: record.title,
+      description: record.description,
+      stellarTxHash: record.stellarTxHash,
+      createdAt: record.createdAt,
+      updatedAt: record.updatedAt,
+      uploadedBy: record.createdBy,
+    };
   }
 
   // DataLoader field resolver — prevents N+1 when querying patient on each record
