@@ -21,6 +21,8 @@ import { PatientModule } from '../patients/patients.module';
 
 import { GqlAuthGuard, GqlRolesGuard } from './guards/gql-auth.guard';
 import { DataLoaderService } from './dataloaders/dataloader.service';
+import { UserDataLoader } from './dataloaders/user.dataloader';
+import { RecordDataLoader } from './dataloaders/record.dataloader';
 import { MedicalRecordResolver } from './resolvers/medical-record.resolver';
 import { PatientResolver } from './resolvers/patient.resolver';
 import { RecordsResolver } from './resolvers/records.resolver';
@@ -29,6 +31,13 @@ import { UsersResolver } from './resolvers/users.resolver';
 import { AuditLogsResolver } from './resolvers/audit-logs.resolver';
 import { TenantsResolver } from './resolvers/tenants.resolver';
 import { RealtimeEventsResolver } from './resolvers/realtime-events.resolver';
+import {
+  QueryResolver,
+  MedicalRecordFieldResolver,
+  AccessGrantFieldResolver,
+  AuditLogFieldResolver,
+} from './resolvers/query.resolver';
+import { MutationResolver } from './resolvers/mutation.resolver';
 import { PUB_SUB } from './resolvers/subscriptions.resolver';
 import { RecordEventsResolver } from './subscriptions/record-events.resolver';
 
@@ -40,12 +49,52 @@ import { PubSubModule } from '../pubsub/pubsub.module';
 import { GraphqlPubSubService } from '../pubsub/services/graphql-pubsub.service';
 import { AuditModule } from '../common/audit/audit.module';
 import { AuditLogService } from '../common/services/audit-log.service';
+import { IdempotencyService } from './services/idempotency.service';
+import { ComplexityPlugin } from './plugins/complexity.plugin';
+import { IdempotencyEntity } from './entities/idempotency.entity';
+import { GdprModule } from '../gdpr/gdpr.module';
+import { DevicesModule } from '../devices/devices.module';
+import { GqlAuthGuard, GqlRolesGuard } from './guards/gql-auth.guard';
+import { DataLoaderService } from './dataloaders/dataloader.service';
+import { UserDataLoader } from './dataloaders/user.dataloader';
+import { RecordDataLoader } from './dataloaders/record.dataloader';
+import { MedicalRecordResolver } from './resolvers/medical-record.resolver';
+import { PatientResolver } from './resolvers/patient.resolver';
+import { RecordsResolver } from './resolvers/records.resolver';
+import { AccessGrantsResolver } from './resolvers/access-grants.resolver';
+import { UsersResolver } from './resolvers/users.resolver';
+import { AuditLogsResolver } from './resolvers/audit-logs.resolver';
+import { TenantsResolver } from './resolvers/tenants.resolver';
+import { RealtimeEventsResolver } from './resolvers/realtime-events.resolver';
+import {
+  QueryResolver,
+  MedicalRecordFieldResolver,
+  AccessGrantFieldResolver,
+  AuditLogFieldResolver,
+} from './resolvers/query.resolver';
+import { MutationResolver } from './resolvers/mutation.resolver';
+import { PUB_SUB } from './resolvers/subscriptions.resolver';
+import { RecordEventsResolver } from './subscriptions/record-events.resolver';
+
+// Services from other modules
+import { AuthModule } from '../auth/auth.module';
+import { AuthTokenService } from '../auth/services/auth-token.service';
+import { SessionManagementService } from '../auth/services/session-management.service';
+import { PubSubModule } from '../pubsub/pubsub.module';
+import { GraphqlPubSubService } from '../pubsub/services/graphql-pubsub.service';
+import { IdempotencyService } from './services/idempotency.service';
+import { ComplexityPlugin } from './plugins/complexity.plugin';
+import { IdempotencyEntity } from './entities/idempotency.entity';
+import { GdprModule } from '../gdpr/gdpr.module';
+import { DevicesModule } from '../devices/devices.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Patient, Record, AccessGrant, User]),
+    TypeOrmModule.forFeature([Patient, Record, AccessGrant, User, IdempotencyEntity]),
     RecordsModule,
     AccessControlModule,
+    UsersModule,
+    PatientModule,
     AuthModule,
     PubSubModule,
     AuditModule,
@@ -261,6 +310,8 @@ import { AuditLogService } from '../common/services/audit-log.service';
     GqlAuthGuard,
     GqlRolesGuard,
     DataLoaderService,
+    UserDataLoader,
+    RecordDataLoader,
     MedicalRecordResolver,
     PatientResolver,
     RecordsResolver,
@@ -270,6 +321,13 @@ import { AuditLogService } from '../common/services/audit-log.service';
     TenantsResolver,
     RealtimeEventsResolver,
     RecordEventsResolver,
+    QueryResolver,
+    MedicalRecordFieldResolver,
+    AccessGrantFieldResolver,
+    AuditLogFieldResolver,
+    MutationResolver,
+    IdempotencyService,
+    ComplexityPlugin,
   ],
   exports: [GqlAuthGuard, GqlRolesGuard, PUB_SUB],
 })
