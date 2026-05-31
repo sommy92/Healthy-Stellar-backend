@@ -73,6 +73,13 @@ import { IdempotencyInterceptor } from './idempotency/idempotency.interceptor';
 import { DlqModule } from './dlq/dlq.module';
 import { OperatorRunbookModule } from './operator-runbook/operator-runbook.module';
 import { IncidentModule } from './incident/incident.module';
+import { PiiRedactionInterceptor } from './common/interceptors/pii-redaction.interceptor';
+import { PaginationInterceptor } from './common/interceptors/pagination.interceptor';
+import { CqrsModule } from '@nestjs/cqrs';
+import { ResearchExportModule } from './research-export/research-export.module';
+import { ReconciliationModule } from './reconciliation/reconciliation.module';
+import { FeatureFlagModule } from './feature-flags/feature-flag.module';
+import { ProjectionsModule } from './projections/projections.module';
 
 @Module({
   imports: [
@@ -145,16 +152,13 @@ import { IncidentModule } from './incident/incident.module';
     ProjectionsModule,
     CqrsModule,
     ProviderPatientModule,
- feat/data-consistency-checker
     ConsistencyCheckerModule,
-
     WebhooksModule,
     IdempotencyModule,
     DlqModule,
     OperatorRunbookModule,
     IncidentModule,
     EventEmitterModule.forRoot(),
- main
   ],
   controllers: [AppController],
   providers: [
@@ -163,6 +167,10 @@ import { IncidentModule } from './incident/incident.module';
     {
       provide: APP_INTERCEPTOR,
       useClass: PiiRedactionInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: PaginationInterceptor,
     },
     {
       provide: APP_INTERCEPTOR,
