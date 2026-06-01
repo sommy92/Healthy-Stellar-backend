@@ -13,6 +13,8 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  DefaultValuePipe,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -46,10 +48,10 @@ import { AdminGuard } from '../../auth/guards/admin.guard';
 import { JwtPayload } from '../../auth/services/auth-token.service';
 import { RecordResponseDto } from '../dto/record-response.dto';
 import { RecordAccessGuard } from '../guards/record-access.guard';
+import { DeprecatedRoute } from '../../common/decorators/deprecated.decorator';
 
 @ApiTags('Records')
-@Version('1')
-@Controller('records')
+@Controller({ path: 'records', version: '1' })
 export class RecordsController {
   constructor(
     private readonly recordsService: RecordsService,
@@ -71,7 +73,11 @@ export class RecordsController {
       },
     }),
   )
-  async uploadRecord(@Body() dto: CreateRecordDto, @UploadedFile() file: Express.Multer.File, @Req() req: any) {
+  async uploadRecord(
+    @Body() dto: CreateRecordDto,
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: any,
+  ) {
     if (!file) {
       throw new BadRequestException('Encrypted record file is required');
     }
@@ -229,17 +235,12 @@ export class RecordsController {
   @ApiResponse({ status: 404, description: 'Record not found' })
   async getVersions(
     @Param('id') id: string,
-    @Query('page') page = '1',
-    @Query('pageSize') pageSize = '20',
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page = 1,
+    @Query('pageSize', new DefaultValuePipe(20), ParseIntPipe) pageSize = 20,
     @Req() req: any,
   ): Promise<PaginatedVersionsResponseDto> {
     const requesterId: string = req.user?.userId ?? req.user?.id;
-    return this.recordVersionService.getVersions(
-      id,
-      requesterId,
-      parseInt(page, 10),
-      parseInt(pageSize, 10),
-    );
+    return this.recordVersionService.getVersions(id, requesterId, page, pageSize);
   }
 
   @Get(':id/versions/:version')
