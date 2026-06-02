@@ -60,6 +60,7 @@
     "build:sdk": "cd packages/sdk && npm run build",
     "test:sdk": "cd packages/sdk && npm test",
     "check:circular": "madge --circular --extensions ts src/ --ts-config tsconfig.json",
+    "check:no-spaces": "bash -lc 'if find src -name \"* *\" -type d | read; then echo \"Found directories with spaces under src/\"; exit 1; fi'",
     "check:migrations": "node scripts/check-migration-safety.js",
     "generate:contract-types": "node scripts/generate-contract-types.js",
     "check:contract-types": "node scripts/check-contract-types.js",
@@ -67,7 +68,7 @@
     "export:schema": "ts-node -r tsconfig-paths/register scripts/export-schema.ts",
     "version:sdk": "node scripts/version-sdk.js",
     "publish:sdk": "npm publish packages/sdk --access public",
-    "docs:generate": "ts-node -r tsconfig-paths/register 'src/SwaggerOpenAPI Documentation with Full Schema Coverage/export-openapi.ts'",
+    "docs:generate": "ts-node -r tsconfig-paths/register 'src/swaggeropenapi-documentation-with-full-schema-coverage/export-openapi.ts'",
     "generate:graphql-types": "graphql-codegen --config codegen.yml"
   },
   "repository": {

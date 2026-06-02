@@ -13,7 +13,7 @@ import { ReportJob } from './entities/report-job.entity';
 import { AccessControlModule } from '../access-control/access-control.module';
 import { ProviderPatientModule } from '../provider-patient/provider-patient.module';
 import { QUEUE_NAMES } from '../queues/queue.constants';
-import { MailModule } from '../Email Notification Service for Critical Access Events/mail.module';
+import { MailModule } from '../email-notification-service-for-critical-access-events/mail.module';
 
 import { MedicalRecordsService } from './services/medical-records.service';
 import { ClinicalTemplatesService } from './services/clinical-templates.service';
