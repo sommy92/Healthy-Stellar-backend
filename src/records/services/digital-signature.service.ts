@@ -121,6 +121,40 @@ export class DigitalSignatureService {
   }
 
   /**
+   * Check if PDF signature structure is valid (parseable PKCS#7).
+   * Does NOT perform cryptographic verification — used during upload to
+   * determine if the signature is structurally sound.
+   */
+  isValidPdfSignatureStructure(buffer: Buffer): boolean {
+    const extracted = this.extractPdfSignature(buffer);
+    if (!extracted) {
+      return false;
+    }
+
+    const { signatureBytes, byteRange } = extracted;
+
+    if (signatureBytes.length < 20) {
+      return false;
+    }
+
+    if (!byteRange || byteRange.length !== 4) {
+      return false;
+    }
+
+    const [offset1, len1, offset2, len2] = byteRange;
+    if (offset1 < 0 || len1 < 0 || offset2 < 0 || len2 < 0) {
+      return false;
+    }
+
+    if (offset1 + len1 > buffer.length || offset2 + len2 > buffer.length) {
+      return false;
+    }
+
+    const pkcs7Info = this.parsePkcs7(signatureBytes);
+    return pkcs7Info !== null;
+  }
+
+  /**
    * Verify a PDF digital signature against a stored public key.
    *
    * Uses the PDF ByteRange to reconstruct the signed data and verifies
